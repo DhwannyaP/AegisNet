@@ -250,10 +250,14 @@
     const onboardingState = document.getElementById('onboarding-state');
     const successState = document.getElementById('success-state');
 
-    // Native fallback
-    termsCheck.addEventListener('change', () => {
+    // Ensure the button state matches the checkbox state precisely
+    function updateButton() {
       agreeBtn.disabled = !termsCheck.checked;
-    });
+    }
+
+    termsCheck.addEventListener('change', updateButton);
+    termsCheck.addEventListener('click', updateButton);
+    termsCheck.addEventListener('input', updateButton);
 
     // Handle agreement
     agreeBtn.addEventListener('click', async () => {

@@ -25,7 +25,7 @@ export const REPLAY_SCENARIOS: ReplayScenario[] = [
     id: "apt-chain",
     name: "APT Kill Chain",
     description: "Advanced Persistent Threat: Recon → Exploit → Backdoor → Privilege Escalation.",
-    icon: "🕵️",
+    icon: "Sec",
     totalDuration: 16000,
     steps: [
       { time: 0, label: "Initial recon", attackType: "Probe", burstSize: 3, description: "Reconnaissance phase: mapping the network topology." },

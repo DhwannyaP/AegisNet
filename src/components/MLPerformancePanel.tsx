@@ -178,7 +178,7 @@ export const MLPerformancePanel: React.FC = () => {
           <div className="space-y-3">
             {[
               { label: "Concept Drift", status: "STABLE", detail: "0.02%", color: "text-green-500 bg-green-500/10", icon: "✓" },
-              { label: "False Positive Rate", status: `${(metrics.falsePositiveRate * 100).toFixed(2)}%`, detail: metrics.falsePositiveRate > 0.02 ? "ELEVATED" : "NORMAL", color: metrics.falsePositiveRate > 0.02 ? "text-yellow-500 bg-yellow-500/10" : "text-green-500 bg-green-500/10", icon: metrics.falsePositiveRate > 0.02 ? "⚠" : "✓" },
+              { label: "False Positive Rate", status: `${(metrics.falsePositiveRate * 100).toFixed(2)}%`, detail: metrics.falsePositiveRate > 0.02 ? "ELEVATED" : "NORMAL", color: metrics.falsePositiveRate > 0.02 ? "text-yellow-500 bg-yellow-500/10" : "text-green-500 bg-green-500/10", icon: metrics.falsePositiveRate > 0.02 ? "!" : "OK" },
               { label: "Model Version", status: "IF-v2.1.0", detail: "100 trees · 200 samples", color: "text-blue-400 bg-blue-500/10", icon: "◈" },
               { label: "Training Data", status: "200 pkts", detail: "Normal baseline", color: "text-purple-400 bg-purple-500/10", icon: "⬡" },
               { label: "Last Inference", status: "< 15ms", detail: "Real-time scoring", color: "text-cyan-400 bg-cyan-500/10", icon: "⚡" },

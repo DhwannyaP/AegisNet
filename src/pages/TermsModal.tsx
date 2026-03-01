@@ -155,7 +155,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ open, onClose, onAgree }
           {/* Warning banner */}
           <div className="mx-6 mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg shrink-0">
             <p className="text-xs text-amber-400 font-medium">
-              ⚠️ Important: AegisNet AI is a network monitoring tool. You may only use it on networks you own or have explicit authorization to monitor. Unauthorized network monitoring is illegal.
+              Important: AegisNet AI is a network monitoring tool. You may only use it on networks you own or have explicit authorization to monitor. Unauthorized network monitoring is illegal.
             </p>
           </div>
 

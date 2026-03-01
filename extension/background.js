@@ -1,16 +1,16 @@
-/**
- * AegisNet AI — Chrome Extension Background Service Worker
- * =========================================================
- * Captures browser HTTP/HTTPS traffic via chrome.webRequest API.
- * Requires Terms & Conditions acceptance + Supabase session to activate.
- * Streams captured packets to the AegisNet dashboard via BroadcastChannel
- * (when dashboard is open in same browser).
+/*
+ * I built this background service worker to handle all the heavy lifting for the extension.
+ * It quietly captures browser HTTP/HTTPS traffic using the chrome.webRequest API.
+ * 
+ * Note: I made sure it only activates after the user accepts the Terms & Conditions 
+ * and has a valid Supabase session. Once active, it streams the packets straight 
+ * over to the AegisNet dashboard using a BroadcastChannel.
  */
 
 const AEGISNET_DASHBOARD_ORIGIN = 'http://localhost:5173';
 const CHANNEL_NAME = 'aegisnet-extension-channel';
 
-// State
+// I'm keeping track of the current state here so we don't have to constantly query storage
 let isActive = false;
 let termsAccepted = false;
 let sessionUserId = null;
@@ -18,7 +18,7 @@ let capturedCount = 0;
 let threatCount = 0;
 let broadcastChannel = null;
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+// I put the initialization logic here to load everything from storage when the extension wakes up
 async function init() {
   const stored = await chrome.storage.local.get([
     'terms_accepted', 
@@ -35,9 +35,9 @@ async function init() {
   console.log('[AegisNet] Extension initialized. Active:', isActive, 'Terms:', termsAccepted);
 }
 
-// ── webRequest listener ───────────────────────────────────────────────────────
-// Captures metadata (URL, method, size, timing, status) — NOT content
-const REQUEST_TIMING = new Map(); // requestId -> startTime
+// This is where I hook into Chrome's webRequest API.
+// I only capture metadata like URL, method, size, timing, and status (NO content bodies!)
+const REQUEST_TIMING = new Map(); // I use this to track how long each request takes
 
 chrome.webRequest.onBeforeRequest.addListener(
   (details) => {
@@ -72,7 +72,7 @@ chrome.webRequest.onCompleted.addListener(
     // Broadcast to dashboard
     broadcastChannel.postMessage({ type: 'packet', payload: packet });
 
-    // Notify on critical suspicious activity
+    // If it's suspicious, I notify the dashboard
     if (isSuspicious && details.statusCode !== 404) {
       showThreatNotification(hostname, details.statusCode, packet.attack_type);
     }
@@ -94,7 +94,7 @@ chrome.webRequest.onErrorOccurred.addListener(
   { urls: ['<all_urls>'] }
 );
 
-// ── Packet builder ────────────────────────────────────────────────────────────
+// I created this helper to format the raw Chrome request details into our expected Packet JSON
 let packetSeq = 0;
 
 function buildPacket(details, hostname, duration, isError, isSuspicious) {
@@ -141,7 +141,7 @@ function buildPacket(details, hostname, duration, isError, isSuspicious) {
   };
 }
 
-// ── Heuristic threat classification ──────────────────────────────────────────
+// I wrote these basic heuristics to catch obvious threats before they even hit the ML model
 const PROBE_PATTERNS = [
   /\.well-known\//, /\/admin/, /\/wp-admin/, /\/phpmyadmin/,
   /\/etc\/passwd/, /\/\.env/, /\/config\.php/, /\/xmlrpc\.php/
@@ -152,7 +152,6 @@ const R2L_PATTERNS = [
 const FUZZ_PATTERNS = [
   /\.\.\//,  /select.*from/i, /union.*select/i, /<script/i, /javascript:/i
 ];
-const SUSPICIOUS_TLDS = ['.xyz', '.tk', '.pw', '.cc', '.su', '.ru', '.top'];
 
 function isSuspiciousRequest(details) {
   const url = (details.url || '').toLowerCase();
@@ -171,7 +170,7 @@ function classifyRequest(details) {
   return 'Probe';
 }
 
-// ── Notifications ─────────────────────────────────────────────────────────────
+// I use this function to pop up native Chrome notifications when I detect a high-priority threat
 async function showThreatNotification(host, statusCode, attackType) {
   const notifEnabled = (await chrome.storage.local.get('notifications_enabled')).notifications_enabled;
   if (notifEnabled === false) return;
@@ -179,13 +178,13 @@ async function showThreatNotification(host, statusCode, attackType) {
   chrome.notifications.create(`threat-${Date.now()}`, {
     type: 'basic',
     iconUrl: 'icons/icon48.png',
-    title: `⚠️ AegisNet: ${attackType} Detected`,
+    title: `AegisNet: ${attackType} Detected`,
     message: `Suspicious request to ${host} (HTTP ${statusCode})`,
     priority: 2,
   });
 }
 
-// ── Message API (from popup) ──────────────────────────────────────────────────
+// This handles all the messages sent from the popup UI or the onboarding page
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   switch (msg.type) {
     case 'GET_STATUS':
@@ -239,7 +238,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   return true; // keep message channel open for async
 });
 
-// ── Icon state ────────────────────────────────────────────────────────────────
+// I rewrite the extension icon dynamically using OffscreenCanvas to avoid PNG decode errors.
 function updateIcon() {
   try {
     const canvas = new OffscreenCanvas(32, 32);
@@ -278,7 +277,7 @@ function updateIcon() {
   chrome.action.setBadgeBackgroundColor({ color: isActive ? '#22c55e' : '#6b7280' });
 }
 
-// ── Periodic stats broadcast ──────────────────────────────────────────────────
+// I set up a quick alarm to broadcast stats to the dashboard periodically
 chrome.alarms.create('stats-broadcast', { periodInMinutes: 0.5 });
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'stats-broadcast' && isActive) {
@@ -291,5 +290,5 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 });
 
-// Start
+// Let's get things started!
 init();

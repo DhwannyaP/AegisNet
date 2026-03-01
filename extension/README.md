@@ -43,14 +43,14 @@ If you have Supabase configured, it also records the acceptance in the user's ac
 
 The extension captures HTTP/HTTPS **request metadata only**:
 
-| Data | Captured? |
-|------|-----------|
-| Request URL | ✅ (up to 200 chars) |
-| HTTP Method | ✅ |
-| Status Code | ✅ |
-| Response Size | ✅ (from Content-Length header) |
-| Request Timing | ✅ |
-| Destination Host | ✅ |
+| Data Point | Captured? |
+|---|---|
+| Request URL | Yes (up to 200 chars) |
+| HTTP Method | Yes |
+| Status Code | Yes |
+| Response Size | Yes (from Content-Length header) |
+| Request Timing | Yes |
+| Destination Host | Yes |
 | Request Body/Passwords | ❌ Never |
 | Cookie Values | ❌ Never |
 

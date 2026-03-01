@@ -27,12 +27,12 @@ sudo node agent.mjs
 
 Expected output:
 ```
-🛡  AegisNet AI Capture Agent
+ AegisNet AI Capture Agent
     Platform : Windows
     Node.js  : v20.x.x
     WebSocket: ws://localhost:3001
 
-✅ AegisNet Agent listening on ws://localhost:3001
+ AegisNet Agent listening on ws://localhost:3001
    Dashboard: Open http://localhost:5173 and toggle Live Mode ON
 ```
 

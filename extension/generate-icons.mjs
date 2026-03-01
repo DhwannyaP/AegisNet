@@ -3,7 +3,7 @@
  * Run with: node generate-icons.mjs
  * Requires: npm install sharp (or just use the inline base64 fallback below)
  *
- * If you don't want to run this, the extension uses emoji fallback (🛡️)
+ * If you don't want to run this, the extension uses a text fallback (A)
  * which Chrome applies to the action button automatically.
  */
 
@@ -39,7 +39,7 @@ function drawIcon(size, inactive = false) {
   ctx.font = `bold ${s * 0.55}px serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('🛡', s / 2, s / 2 + s * 0.02);
+  ctx.fillText('A', s / 2, s / 2 + s * 0.02);
 
   return canvas.toBuffer('image/png');
 }
@@ -52,9 +52,9 @@ try {
     writeFileSync(`./icons/icon${size}-inactive.png`, drawIcon(size, true));
     console.log(`Generated icon${size}.png`);
   }
-  console.log('✅ Icons generated in extension/icons/');
-} catch (err) {
-  console.log('⚠️  canvas not installed — using placeholder icons.');
+  console.log('Icons generated in extension/icons/');
+} catch (e) {
+  console.log('canvas not installed — using placeholder icons.');
   console.log('Run: npm install canvas && node generate-icons.mjs');
   console.log('Or provide your own PNG files in extension/icons/');
   

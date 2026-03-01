@@ -4,20 +4,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const onboardingState = document.getElementById('onboarding-state');
   const successState = document.getElementById('success-state');
 
-  // Bulletproof fallback: sync button state automatically 5 times a second
+  // I added a bulletproof fallback here: it automatically syncs the button state 5 times a second
   setInterval(() => {
-    if (agreeBtn.textContent === 'Saving agreement...') return; // Don't override loading state
+    if (agreeBtn.textContent === 'Saving agreement...') return; // Don't override the loading state
     agreeBtn.disabled = !termsCheck.checked;
   }, 200);
 
-  // Standard event listener
+  // Normal event listener for instantaneous updates
+
   termsCheck.addEventListener('change', () => {
     if (agreeBtn.textContent !== 'Saving agreement...') {
       agreeBtn.disabled = !termsCheck.checked;
     }
   });
 
-  // Handle agreement
+  // Handle the user clicking the agreement button
+
   agreeBtn.addEventListener('click', async () => {
     if (!termsCheck.checked) return;
 
@@ -25,16 +27,19 @@ document.addEventListener('DOMContentLoaded', () => {
     agreeBtn.textContent = 'Saving agreement...';
 
     try {
-      // Tell background to store acceptance
+      // Tell the background service worker to store this acceptance
+
       await chrome.runtime.sendMessage({
         type: 'ACCEPT_TERMS',
         userId: null, // Will be filled if Supabase session exists later
       });
 
-      // Activate monitoring automatically
+      // Then I activate the monitoring automatically
+
       await chrome.runtime.sendMessage({ type: 'SET_ACTIVE', value: true });
 
-      // Show success screen
+      // Finally I flip the UI to show the success screen
+
       onboardingState.style.display = 'none';
       successState.style.display = 'block';
 
@@ -45,7 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Check if already accepted on load
+  // When the page loads, I check if they already accepted the terms previously
+
   try {
     if (typeof chrome !== 'undefined' && chrome.runtime) {
       chrome.runtime.sendMessage({ type: 'GET_STATUS' }).then(status => {

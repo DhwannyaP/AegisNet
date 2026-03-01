@@ -1,19 +1,18 @@
 #!/usr/bin/env node
 /**
  * AegisNet AI — Universal Capture Agent
- * ======================================
- * Cross-platform: Windows / macOS / Linux
- * Requirements: Node.js 18+ only. No Wireshark. No libpcap.
+/**
+ * AegisNet AI — Universal Capture Agent
  * 
- * How it works:
- *   Reads the OS connection table (netstat/ss) every 500ms.
- *   Converts live TCP/UDP connections into AegisNet Packet JSON.
- *   Streams packets to the dashboard via WebSocket.
- *   Handles firewall block/unblock via netsh (Win) or iptables (Lin/Mac).
+ * I built this to run on Windows, macOS, or Linux without needing Wireshark 
+ * or libpcap. All it needs is Node.js 18+.
  * 
- * Usage:
- *   Windows (Admin PowerShell): node agent.mjs
- *   Linux/macOS (sudo):         sudo node agent.mjs
+ * I wrote it so that it polls the OS connection table (using netstat or ss)
+ * every 500ms, parses live TCP/UDP connections into my custom JSON format,
+ * and streams them directly into the dashboard using WebSockets.
+ * 
+ * It also handles the firewall mitigation automatically by talking to 
+ * netsh on Windows or iptables on Linux/Mac.
  */
 
 import { createServer } from 'http';
@@ -30,14 +29,14 @@ const POLL_INTERVAL_MS = 600;
 // --- Firewall rule tracking ---
 const blockedIPs = new Map(); // ip -> ruleName
 
-// ─── OS Detection ─────────────────────────────────────────────────────────────
-console.log(`\n🛡  AegisNet AI Capture Agent`);
+// I start off by identifying which OS we are running on so I know which commands to use
+console.log(`\n AegisNet AI Capture Agent`);
 console.log(`    Platform : ${OS_TYPE === 'win32' ? 'Windows' : OS_TYPE === 'darwin' ? 'macOS' : 'Linux'}`);
 console.log(`    Node.js  : ${process.version}`);
 console.log(`    PID      : ${process.pid}`);
 console.log(`    WebSocket: ws://localhost:${PORT}\n`);
 
-// ─── Parse netstat output into connection records ──────────────────────────────
+// Here I parse the raw netstat output into structured connection records.
 function parseWindowsNetstat(raw) {
   const lines = raw.split('\n').filter(l => l.match(/^\s*(TCP|UDP)/i));
   return lines.map(line => {
@@ -92,7 +91,7 @@ function splitAddrPort(str) {
   return [str.substring(0, lastColon), str.substring(lastColon + 1)];
 }
 
-// ─── Get live connections from OS ─────────────────────────────────────────────
+// I use this function to run the native OS terminal commands and grab the active connections
 async function getLiveConnections() {
   try {
     let raw;
@@ -119,7 +118,7 @@ async function getLiveConnections() {
   }
 }
 
-// ─── Convert connection to AegisNet Packet format ─────────────────────────────
+// I wrote this to convert the basic connection info into our rich AegisNet Packet format
 let packetCounter = 0;
 const seenConnections = new Set();
 
@@ -154,7 +153,7 @@ function connectionToPacket(conn) {
   };
 }
 
-// ─── Firewall Operations ───────────────────────────────────────────────────────
+// These are the firewall mitigation functions I wrote to instantly cut off threat IPs
 async function blockIP(ip) {
   const ruleName = `AegisNet-Block-${ip.replace(/\./g, '_').replace(/:/g, '_')}`;
   if (blockedIPs.has(ip)) return { success: true, already: true, ruleName };
@@ -195,7 +194,7 @@ async function unblockIP(ip) {
   }
 }
 
-// ─── HTTP Server (REST for firewall) + WebSocket ──────────────────────────────
+// I set up a tiny local HTTP server here to accept unblock/block commands from the React dashboard
 const server = createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
@@ -256,7 +255,7 @@ const server = createServer(async (req, res) => {
   res.end(JSON.stringify({ error: 'Not found' }));
 });
 
-// ─── WebSocket Server ──────────────────────────────────────────────────────────
+// I also attach the WebSocket server to the same port for streaming the live packets
 const wss = new WebSocketServer({ server });
 const clients = new Set();
 
@@ -283,7 +282,7 @@ function broadcast(data) {
   });
 }
 
-// ─── Main capture loop ─────────────────────────────────────────────────────────
+// This represents the main loop of the agent. I run it repeatedly to stream data.
 async function captureLoop() {
   const connections = await getLiveConnections();
 
@@ -297,9 +296,9 @@ async function captureLoop() {
   }
 }
 
-// Start
+// Start the servers and the polling loop
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`✅ AegisNet Agent listening on ws://localhost:${PORT}`);
+  console.log(` AegisNet Agent listening on ws://localhost:${PORT}`);
   console.log(`   REST API: http://localhost:${PORT}/api/firewall/block\n`);
   console.log('   Dashboard: Open http://localhost:5173 and toggle Live Mode ON\n');
 

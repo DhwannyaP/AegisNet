@@ -1,6 +1,6 @@
 # AegisNet AI — Enterprise Intrusion Detection Dashboard
 
-> 🛡️ AI-powered real-time network intrusion detection with ML anomaly scoring, live threat intelligence, attack replay, and automated firewall mitigation.
+> AI-powered real-time network intrusion detection with ML anomaly scoring, live threat intelligence, attack replay, and automated firewall mitigation.
 
 [![Build](https://img.shields.io/badge/build-passing-22c55e)](.) [![Stack](https://img.shields.io/badge/stack-React%20%2B%20TypeScript%20%2B%20Vite-3b82f6)](.) [![ML](https://img.shields.io/badge/ML-Isolation%20Forest-8b5cf6)](.)
 
@@ -11,10 +11,10 @@
 | Feature | Description |
 |---------|-------------|
 | 🤖 **AI Detection** | Isolation Forest ML model scores every packet in real-time |
-| 📊 **Live Dashboard** | Animated stream, network graph, analysis charts, forensics panel |
+| Live Dashboard | Animated stream, network graph, analysis charts, forensics panel |
 | 🔍 **XAI Forensics** | Explainable AI — per-packet feature importance breakdown |
 | 🌍 **Threat Intelligence** | MITRE ATT&CK mapping, CVE references, geolocation per alert |
-| ⚔️ **Attack Replay** | Step-by-step simulation of 7 attack types |
+| Attack Replay | Step-by-step simulation of 7 attack types |
 | 🔥 **Firewall Mitigation** | One-click block/unblock via Windows Firewall or iptables |
 | 🌐 **Chrome Extension** | Capture real browser traffic — no Wireshark, no npm needed |
 | 🔐 **Auth + T&C Gate** | Supabase auth, Terms & Conditions agreement, demo mode |

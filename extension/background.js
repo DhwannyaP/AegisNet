@@ -1,0 +1,271 @@
+/**
+ * AegisNet AI — Chrome Extension Background Service Worker
+ * =========================================================
+ * Captures browser HTTP/HTTPS traffic via chrome.webRequest API.
+ * Requires Terms & Conditions acceptance + Supabase session to activate.
+ * Streams captured packets to the AegisNet dashboard via BroadcastChannel
+ * (when dashboard is open in same browser).
+ */
+
+const AEGISNET_DASHBOARD_ORIGIN = 'http://localhost:5173';
+const CHANNEL_NAME = 'aegisnet-extension-channel';
+
+// State
+let isActive = false;
+let termsAccepted = false;
+let sessionUserId = null;
+let capturedCount = 0;
+let threatCount = 0;
+let broadcastChannel = null;
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  const stored = await chrome.storage.local.get([
+    'terms_accepted', 
+    'session_user_id',
+    'is_active'
+  ]);
+  termsAccepted = !!stored.terms_accepted;
+  sessionUserId = stored.session_user_id || null;
+  isActive = !!stored.is_active && termsAccepted;
+
+  broadcastChannel = new BroadcastChannel(CHANNEL_NAME);
+
+  updateIcon();
+  console.log('[AegisNet] Extension initialized. Active:', isActive, 'Terms:', termsAccepted);
+}
+
+// ── webRequest listener ───────────────────────────────────────────────────────
+// Captures metadata (URL, method, size, timing, status) — NOT content
+const REQUEST_TIMING = new Map(); // requestId -> startTime
+
+chrome.webRequest.onBeforeRequest.addListener(
+  (details) => {
+    if (!isActive) return;
+    REQUEST_TIMING.set(details.requestId, Date.now());
+  },
+  { urls: ['<all_urls>'] }
+);
+
+chrome.webRequest.onCompleted.addListener(
+  (details) => {
+    if (!isActive) return;
+    capturedCount++;
+
+    const startTime = REQUEST_TIMING.get(details.requestId) || Date.now();
+    REQUEST_TIMING.delete(details.requestId);
+    const duration = (Date.now() - startTime) / 1000;
+
+    // Parse URL for IPs/host
+    let hostname = 'unknown';
+    try {
+      hostname = new URL(details.url).hostname;
+    } catch { /* ignore */ }
+
+    const isError = details.statusCode >= 400;
+    const isSuspicious = isSuspiciousRequest(details);
+
+    const packet = buildPacket(details, hostname, duration, isError, isSuspicious);
+
+    if (isSuspicious) threatCount++;
+
+    // Broadcast to dashboard
+    broadcastChannel.postMessage({ type: 'packet', payload: packet });
+
+    // Notify on critical suspicious activity
+    if (isSuspicious && details.statusCode !== 404) {
+      showThreatNotification(hostname, details.statusCode, packet.attack_type);
+    }
+  },
+  { urls: ['<all_urls>'] },
+  ['responseHeaders']
+);
+
+chrome.webRequest.onErrorOccurred.addListener(
+  (details) => {
+    if (!isActive) return;
+    REQUEST_TIMING.delete(details.requestId);
+
+    const packet = buildPacket(details, 'error', 0, true, false);
+    packet.error_rate = 1.0;
+    packet.flags = 'REJ';
+    broadcastChannel.postMessage({ type: 'packet', payload: packet });
+  },
+  { urls: ['<all_urls>'] }
+);
+
+// ── Packet builder ────────────────────────────────────────────────────────────
+let packetSeq = 0;
+
+function buildPacket(details, hostname, duration, isError, isSuspicious) {
+  const url = details.url || '';
+  const isHTTPS = url.startsWith('https://');
+  const method = details.method || 'GET';
+  const statusCode = details.statusCode || 0;
+
+  // Estimate bytes from response headers if available
+  let dstBytes = 1024;
+  if (details.responseHeaders) {
+    const cl = details.responseHeaders.find(h => h.name.toLowerCase() === 'content-length');
+    if (cl && cl.value) dstBytes = parseInt(cl.value) || 1024;
+  }
+
+  const srcBytes = method === 'POST' || method === 'PUT' ? 512 + Math.random() * 2048 : 64;
+
+  return {
+    id: `ext-${++packetSeq}-${Date.now()}`,
+    timestamp: Date.now(),
+    protocol: isHTTPS ? 'TCP' : 'TCP',
+    src_ip: '127.0.0.1', // local browser
+    dst_ip: hostname,
+    src_port: 40000 + (packetSeq % 25000),
+    dst_port: isHTTPS ? 443 : 80,
+    flags: isError ? 'RSTO' : 'SF',
+    ttl: 64,
+    src_bytes: srcBytes,
+    dst_bytes: dstBytes,
+    duration,
+    num_connections: 1,
+    error_rate: isError ? 0.8 : 0.01,
+    attack_type: isSuspicious ? classifyRequest(details) : 'Normal',
+    severity: isSuspicious ? 'HIGH' : 'NONE',
+    // Extra context for the dashboard
+    _meta: {
+      url: url.substring(0, 200),
+      method,
+      statusCode,
+      initiator: details.initiator || 'unknown',
+      type: details.type,
+      source: 'extension',
+    }
+  };
+}
+
+// ── Heuristic threat classification ──────────────────────────────────────────
+const PROBE_PATTERNS = [
+  /\.well-known\//, /\/admin/, /\/wp-admin/, /\/phpmyadmin/,
+  /\/etc\/passwd/, /\/\.env/, /\/config\.php/, /\/xmlrpc\.php/
+];
+const R2L_PATTERNS = [
+  /login/, /signin/, /auth/, /password/, /credential/
+];
+const FUZZ_PATTERNS = [
+  /\.\.\//,  /select.*from/i, /union.*select/i, /<script/i, /javascript:/i
+];
+const SUSPICIOUS_TLDS = ['.xyz', '.tk', '.pw', '.cc', '.su', '.ru', '.top'];
+
+function isSuspiciousRequest(details) {
+  const url = (details.url || '').toLowerCase();
+  if (details.statusCode === 403 || details.statusCode === 401) return true;
+  if (PROBE_PATTERNS.some(p => p.test(url))) return true;
+  if (FUZZ_PATTERNS.some(p => p.test(url))) return true;
+  return false;
+}
+
+function classifyRequest(details) {
+  const url = (details.url || '').toLowerCase();
+  if (FUZZ_PATTERNS.some(p => p.test(url))) return 'Fuzzers';
+  if (PROBE_PATTERNS.some(p => p.test(url))) return 'Probe';
+  if (R2L_PATTERNS.some(p => p.test(url)) && details.statusCode === 401) return 'R2L';
+  if (details.statusCode === 403) return 'Exploits';
+  return 'Probe';
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+async function showThreatNotification(host, statusCode, attackType) {
+  const notifEnabled = (await chrome.storage.local.get('notifications_enabled')).notifications_enabled;
+  if (notifEnabled === false) return;
+
+  chrome.notifications.create(`threat-${Date.now()}`, {
+    type: 'basic',
+    iconUrl: 'icons/icon48.png',
+    title: `⚠️ AegisNet: ${attackType} Detected`,
+    message: `Suspicious request to ${host} (HTTP ${statusCode})`,
+    priority: 2,
+  });
+}
+
+// ── Message API (from popup) ──────────────────────────────────────────────────
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  switch (msg.type) {
+    case 'GET_STATUS':
+      sendResponse({
+        isActive,
+        termsAccepted,
+        sessionUserId,
+        capturedCount,
+        threatCount,
+      });
+      break;
+
+    case 'SET_ACTIVE':
+      if (!termsAccepted) {
+        sendResponse({ success: false, error: 'Terms not accepted' });
+        return true;
+      }
+      isActive = msg.value;
+      chrome.storage.local.set({ is_active: isActive });
+      updateIcon();
+      broadcastChannel.postMessage({ type: 'extension_status', isActive });
+      sendResponse({ success: true });
+      break;
+
+    case 'ACCEPT_TERMS':
+      termsAccepted = true;
+      sessionUserId = msg.userId || null;
+      chrome.storage.local.set({
+        terms_accepted: true,
+        terms_accepted_at: new Date().toISOString(),
+        terms_version: '1.0',
+        session_user_id: sessionUserId,
+      });
+      sendResponse({ success: true });
+      break;
+
+    case 'SIGN_OUT':
+      isActive = false;
+      termsAccepted = false;
+      sessionUserId = null;
+      chrome.storage.local.clear();
+      updateIcon();
+      broadcastChannel.postMessage({ type: 'extension_status', isActive: false });
+      sendResponse({ success: true });
+      break;
+
+    case 'GET_STATS':
+      sendResponse({ capturedCount, threatCount });
+      break;
+  }
+  return true; // keep message channel open for async
+});
+
+// ── Icon state ────────────────────────────────────────────────────────────────
+function updateIcon() {
+  const path = isActive
+    ? { 16: 'icons/icon16.png', 32: 'icons/icon32.png' }
+    : { 16: 'icons/icon16-inactive.png', 32: 'icons/icon32-inactive.png' };
+
+  chrome.action.setIcon({ path }).catch(() => {
+    // Fallback if inactive icons don't exist
+    chrome.action.setIcon({ path: { 16: 'icons/icon16.png', 32: 'icons/icon32.png' } });
+  });
+
+  chrome.action.setBadgeText({ text: isActive ? 'ON' : '' });
+  chrome.action.setBadgeBackgroundColor({ color: isActive ? '#22c55e' : '#6b7280' });
+}
+
+// ── Periodic stats broadcast ──────────────────────────────────────────────────
+chrome.alarms.create('stats-broadcast', { periodInMinutes: 0.5 });
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === 'stats-broadcast' && isActive) {
+    broadcastChannel.postMessage({
+      type: 'extension_stats',
+      capturedCount,
+      threatCount,
+      isActive,
+    });
+  }
+});
+
+// Start
+init();

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AegisNet AI — Get Started</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      min-height: 100vh;
+      background: #060d1a;
+      color: #e2e8f0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    .bg-grid {
+      min-height: 100vh;
+      background-image:
+        linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .card {
+      width: 100%; max-width: 620px;
+      background: rgba(10,15,30,0.95);
+      border: 1px solid #1e293b;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+    }
+
+    /* Header */
+    .card-header {
+      padding: 32px 40px 24px;
+      border-bottom: 1px solid #1e293b;
+      background: linear-gradient(135deg, #0d1626 0%, #0a0f1a 100%);
+      text-align: center;
+    }
+    .logo { font-size: 48px; margin-bottom: 16px; }
+    .card-header h1 { font-size: 28px; font-weight: 900; letter-spacing: -0.5px; }
+    .card-header h1 span { background: linear-gradient(90deg,#3b82f6,#06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .card-header p { color: #64748b; margin-top: 6px; font-size: 14px; }
+
+    /* Steps */
+    .steps { padding: 24px 40px; display: flex; flex-direction: column; gap: 0; }
+    .step {
+      display: flex; gap: 16px;
+      padding: 20px 0;
+      border-bottom: 1px solid #1e293b;
+    }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg,#3b82f6,#2563eb);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800; color: white;
+      flex-shrink: 0; margin-top: 2px;
+    }
+    .step-body h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .step-body p { font-size: 13px; color: #94a3b8; line-height: 1.5; }
+
+    /* Terms */
+    .terms-box {
+      margin: 0 40px 24px;
+      background: #0d1626;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .terms-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px; border-bottom: 1px solid #1e293b;
+      background: #111827;
+    }
+    .terms-header span { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .terms-badge { font-size: 10px; background: #1e3a5f; color: #60a5fa; border-radius: 4px; padding: 2px 8px; }
+    .terms-content {
+      max-height: 200px; overflow-y: auto;
+      padding: 16px 18px; font-size: 12px; color: #94a3b8; line-height: 1.6;
+    }
+    .terms-content h4 { color: #e2e8f0; font-size: 12px; margin: 12px 0 4px; }
+    .terms-content::-webkit-scrollbar { width: 4px; }
+    .terms-content::-webkit-scrollbar-track { background: #0d1626; }
+    .terms-content::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
+    /* Warning */
+    .warning-box {
+      margin: 0 40px 20px;
+      padding: 12px 16px;
+      background: #1c1408;
+      border: 1px solid #f59e0b33;
+      border-radius: 10px;
+      font-size: 12px; color: #fbbf24; line-height: 1.5;
+    }
+    .warning-box strong { color: #f59e0b; }
+
+    /* Agreement */
+    .agree-section { padding: 16px 40px 28px; }
+    .checkbox-row {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 14px 16px; background: #0d1626;
+      border: 1px solid #1e293b; border-radius: 10px; margin-bottom: 14px;
+      cursor: pointer; transition: border-color 0.15s;
+    }
+    .checkbox-row:hover { border-color: #3b82f6; }
+    .checkbox-row input[type=checkbox] { accent-color: #3b82f6; width: 16px; height: 16px; margin-top: 1px; flex-shrink: 0; cursor: pointer; }
+    .checkbox-row label { font-size: 12px; color: #94a3b8; line-height: 1.5; cursor: pointer; }
+    .checkbox-row label strong { color: #e2e8f0; }
+
+    .btn-agree {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg,#3b82f6,#2563eb);
+      color: white; border: none; border-radius: 10px;
+      font-size: 14px; font-weight: 800; cursor: pointer;
+      transition: all 0.2s; letter-spacing: 0.3px;
+      box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+    }
+    .btn-agree:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(59,130,246,0.5); }
+    .btn-agree:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Success state */
+    .success-state { display: none; }
+    .success-icon { font-size: 64px; text-align: center; margin-bottom: 20px; }
+    .success-card {
+      margin: 0 40px 32px;
+      background: #0d2010; border: 1px solid #22c55e33;
+      border-radius: 16px; padding: 28px; text-align: center;
+    }
+    .success-card h2 { color: #22c55e; font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    .success-card p { color: #94a3b8; font-size: 13px; margin-bottom: 20px; }
+    .btn-dashboard {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px; background: linear-gradient(135deg,#22c55e,#16a34a);
+      color: white; border: none; border-radius: 10px;
+      font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none;
+      box-shadow: 0 4px 16px rgba(34,197,94,0.35);
+    }
+
+    /* Footer */
+    .card-footer { padding: 14px 40px; border-top: 1px solid #1e293b; background: #060d1a; }
+    .card-footer p { font-size: 11px; color: #334155; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="bg-grid">
+    <div class="card">
+      <!-- Header -->
+      <div class="card-header">
+        <div class="logo">🛡️</div>
+        <h1><span>AegisNet</span> AI</h1>
+        <p>Enterprise AI Intrusion Detection — Browser Extension</p>
+      </div>
+
+      <!-- Onboarding state -->
+      <div id="onboarding-state">
+        <!-- Steps -->
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h3>Read & Accept Terms</h3>
+              <p>Review the Terms & Conditions and Acceptable Use Policy below. You may only monitor networks you own or have explicit authorization to monitor.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h3>Activate Monitoring</h3>
+              <p>After accepting, click the AegisNet icon in your toolbar and press <strong>Start Monitoring</strong>. The extension will begin capturing browser traffic immediately.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h3>Open the Dashboard</h3>
+              <p>Visit your AegisNet dashboard. Packets stream in automatically — no extra setup. ML analysis and threat alerts appear in real time.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terms box -->
+        <div class="terms-box">
+          <div class="terms-header">
+            <span>⚖️ Terms & Conditions <span class="terms-badge">v1.0</span></span>
+          </div>
+          <div class="terms-content">
+            <h4>1. Acceptable Use</h4>
+            You may ONLY use AegisNet AI to monitor networks you own or have explicit written authorization to monitor. Unauthorized network monitoring is illegal under the Computer Fraud and Abuse Act, Computer Misuse Act, and equivalent legislation worldwide.
+
+            <h4>2. Data Collection</h4>
+            This extension captures HTTP/HTTPS request <strong>metadata only</strong> (URLs, headers, status codes, timing). It does NOT capture request bodies, passwords, form data, or any private content. All data is processed locally in your browser. Nothing is sent to AegisNet servers.
+
+            <h4>3. Firewall Actions</h4>
+            If you use the mitigation feature (block/unblock), you are solely responsible for the consequences of those network rules. AegisNet AI accepts no liability for blocked legitimate traffic.
+
+            <h4>4. Limitation of Liability</h4>
+            THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY. AEGISNET AI SHALL NOT BE LIABLE FOR ANY DAMAGES ARISING FROM USE OF THIS SOFTWARE, INCLUDING SECURITY BREACHES OCCURRING DESPITE ITS USE.
+
+            <h4>5. Privacy</h4>
+            Account data (email, T&C acceptance) is stored via Supabase. Network telemetry is processed locally and not stored in the cloud.
+
+            <h4>6. Agreement</h4>
+            By checking the box below, you confirm you have read and agree to these terms, are of legal age, and will use this tool only on networks you are authorized to monitor.
+          </div>
+        </div>
+
+        <!-- Warning -->
+        <div class="warning-box">
+          <strong>⚠️ Legal Notice:</strong> Only use this tool on your own network or with explicit written permission. Unauthorized packet monitoring is a criminal offense in most jurisdictions.
+        </div>
+
+        <!-- Agreement -->
+        <div class="agree-section">
+          <div class="checkbox-row">
+            <input type="checkbox" id="terms-check" />
+            <label for="terms-check">
+              I have read and <strong>agree to the Terms & Conditions</strong>. I confirm I will only monitor networks I own or have explicit authorization to monitor. I understand that firewall mitigation actions are real and take effect immediately.
+            </label>
+          </div>
+          <button class="btn-agree" id="agree-btn" disabled>
+            ✓ Agree & Activate AegisNet AI
+          </button>
+        </div>
+      </div>
+
+      <!-- Success state -->
+      <div id="success-state" class="success-state">
+        <div class="success-card" style="margin-top:32px;">
+          <div class="success-icon">✅</div>
+          <h2>You're All Set!</h2>
+          <p>Terms accepted. AegisNet AI is ready to monitor. Click the extension icon in your toolbar and press <strong>Start Monitoring</strong> to begin.</p>
+          <a href="http://localhost:5173" class="btn-dashboard" target="_blank">
+            📊 Open AegisNet Dashboard ↗
+          </a>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="card-footer">
+        <p>AegisNet AI · Enterprise Network Security · Terms v1.0 · 2025</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const termsCheck = document.getElementById('terms-check');
+    const agreeBtn = document.getElementById('agree-btn');
+    const onboardingState = document.getElementById('onboarding-state');
+    const successState = document.getElementById('success-state');
+
+    // Enable agree button only when checkbox checked
+    termsCheck.addEventListener('change', () => {
+      agreeBtn.disabled = !termsCheck.checked;
+    });
+
+    // Handle agreement
+    agreeBtn.addEventListener('click', async () => {
+      if (!termsCheck.checked) return;
+
+      agreeBtn.disabled = true;
+      agreeBtn.textContent = 'Saving agreement...';
+
+      try {
+        // Tell background to store acceptance
+        await chrome.runtime.sendMessage({
+          type: 'ACCEPT_TERMS',
+          userId: null, // Will be filled if Supabase session exists
+        });
+
+        // Activate monitoring automatically
+        await chrome.runtime.sendMessage({ type: 'SET_ACTIVE', value: true });
+
+        // Show success
+        onboardingState.style.display = 'none';
+        successState.style.display = 'block';
+
+      } catch (err) {
+        agreeBtn.disabled = false;
+        agreeBtn.textContent = '✓ Agree & Activate AegisNet AI';
+        alert('Error saving agreement. Please try again.');
+      }
+    });
+
+    // Check if already accepted
+    chrome.runtime.sendMessage({ type: 'GET_STATUS' }).then(status => {
+      if (status.termsAccepted) {
+        onboardingState.style.display = 'none';
+        successState.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

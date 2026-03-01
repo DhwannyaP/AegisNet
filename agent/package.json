@@ -1,0 +1,18 @@
+{
+  "name": "aegisnet-agent",
+  "version": "1.0.0",
+  "description": "AegisNet AI — Cross-platform packet capture agent (Windows/Linux/macOS)",
+  "type": "module",
+  "main": "agent.mjs",
+  "scripts": {
+    "start": "node agent.mjs",
+    "start:win": "node agent.mjs",
+    "start:linux": "sudo node agent.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

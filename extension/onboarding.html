@@ -244,62 +244,6 @@
     </div>
   </div>
 
-  <script>
-    const termsCheck = document.getElementById('terms-check');
-    const agreeBtn = document.getElementById('agree-btn');
-    const onboardingState = document.getElementById('onboarding-state');
-    const successState = document.getElementById('success-state');
-
-    // Ensure the button state matches the checkbox state precisely
-    function updateButton() {
-      agreeBtn.disabled = !termsCheck.checked;
-    }
-
-    termsCheck.addEventListener('change', updateButton);
-    termsCheck.addEventListener('click', updateButton);
-    termsCheck.addEventListener('input', updateButton);
-
-    // Handle agreement
-    agreeBtn.addEventListener('click', async () => {
-      if (!termsCheck.checked) return;
-
-      agreeBtn.disabled = true;
-      agreeBtn.textContent = 'Saving agreement...';
-
-      try {
-        // Tell background to store acceptance
-        await chrome.runtime.sendMessage({
-          type: 'ACCEPT_TERMS',
-          userId: null, // Will be filled if Supabase session exists
-        });
-
-        // Activate monitoring automatically
-        await chrome.runtime.sendMessage({ type: 'SET_ACTIVE', value: true });
-
-        // Show success
-        onboardingState.style.display = 'none';
-        successState.style.display = 'block';
-
-      } catch (err) {
-        agreeBtn.disabled = false;
-        agreeBtn.textContent = '✓ Agree & Activate AegisNet AI';
-        alert('Error saving agreement. Please try again.');
-      }
-    });
-
-    // Check if already accepted
-    try {
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.sendMessage({ type: 'GET_STATUS' }).then(status => {
-          if (status && status.termsAccepted) {
-            onboardingState.style.display = 'none';
-            successState.style.display = 'block';
-          }
-        }).catch(e => console.log('Not in extension context'));
-      }
-    } catch (e) {
-      console.log('Skipping status check - running locally');
-    }
-  </script>
+  <script src="onboarding.js"></script>
 </body>
 </html>

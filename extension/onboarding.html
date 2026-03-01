@@ -213,9 +213,9 @@
 
         <!-- Agreement -->
         <div class="agree-section">
-          <div class="checkbox-row">
+          <div class="checkbox-row" id="checkbox-container">
             <input type="checkbox" id="terms-check" />
-            <label for="terms-check">
+            <label for="terms-check" id="terms-label">
               I have read and <strong>agree to the Terms & Conditions</strong>. I confirm I will only monitor networks I own or have explicit authorization to monitor. I understand that firewall mitigation actions are real and take effect immediately.
             </label>
           </div>
@@ -249,8 +249,18 @@
     const agreeBtn = document.getElementById('agree-btn');
     const onboardingState = document.getElementById('onboarding-state');
     const successState = document.getElementById('success-state');
+    const checkboxContainer = document.getElementById('checkbox-container');
 
-    // Enable agree button only when checkbox checked
+    // Make the entire row clickable to toggle checkbox
+    checkboxContainer.addEventListener('click', (e) => {
+      // Don't double-trigger if they clicked the actual input or label
+      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'LABEL') {
+        termsCheck.checked = !termsCheck.checked;
+      }
+      agreeBtn.disabled = !termsCheck.checked;
+    });
+
+    // Native fallback
     termsCheck.addEventListener('change', () => {
       agreeBtn.disabled = !termsCheck.checked;
     });
@@ -284,12 +294,18 @@
     });
 
     // Check if already accepted
-    chrome.runtime.sendMessage({ type: 'GET_STATUS' }).then(status => {
-      if (status.termsAccepted) {
-        onboardingState.style.display = 'none';
-        successState.style.display = 'block';
+    try {
+      if (typeof chrome !== 'undefined' && chrome.runtime) {
+        chrome.runtime.sendMessage({ type: 'GET_STATUS' }).then(status => {
+          if (status && status.termsAccepted) {
+            onboardingState.style.display = 'none';
+            successState.style.display = 'block';
+          }
+        }).catch(e => console.log('Not in extension context'));
       }
-    });
+    } catch (e) {
+      console.log('Skipping status check - running locally');
+    }
   </script>
 </body>
 </html>

@@ -241,14 +241,38 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
 // ── Icon state ────────────────────────────────────────────────────────────────
 function updateIcon() {
-  const path = isActive
-    ? { 16: 'icons/icon16.png', 32: 'icons/icon32.png' }
-    : { 16: 'icons/icon16-inactive.png', 32: 'icons/icon32-inactive.png' };
+  try {
+    const canvas = new OffscreenCanvas(32, 32);
+    const ctx = canvas.getContext('2d');
+    
+    ctx.clearRect(0, 0, 32, 32);
 
-  chrome.action.setIcon({ path }).catch(() => {
-    // Fallback if inactive icons don't exist
-    chrome.action.setIcon({ path: { 16: 'icons/icon16.png', 32: 'icons/icon32.png' } });
-  });
+    // Draw background circle
+    ctx.beginPath();
+    ctx.arc(16, 16, 14, 0, 2 * Math.PI);
+    
+    if (isActive) {
+      const grad = ctx.createLinearGradient(0, 0, 32, 32);
+      grad.addColorStop(0, '#3b82f6');
+      grad.addColorStop(1, '#06b6d4');
+      ctx.fillStyle = grad;
+    } else {
+      ctx.fillStyle = '#6b7280';
+    }
+    ctx.fill();
+
+    // Draw inner 'A'
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('A', 16, 18);
+
+    const imageData = ctx.getImageData(0, 0, 32, 32);
+    chrome.action.setIcon({ imageData: { 32: imageData } });
+  } catch (err) {
+    console.warn('Could not set dynamic icon, using fallback badge', err);
+  }
 
   chrome.action.setBadgeText({ text: isActive ? 'ON' : '' });
   chrome.action.setBadgeBackgroundColor({ color: isActive ? '#22c55e' : '#6b7280' });

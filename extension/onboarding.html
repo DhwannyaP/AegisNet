@@ -249,16 +249,6 @@
     const agreeBtn = document.getElementById('agree-btn');
     const onboardingState = document.getElementById('onboarding-state');
     const successState = document.getElementById('success-state');
-    const checkboxContainer = document.getElementById('checkbox-container');
-
-    // Make the entire row clickable to toggle checkbox
-    checkboxContainer.addEventListener('click', (e) => {
-      // Don't double-trigger if they clicked the actual input or label
-      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'LABEL') {
-        termsCheck.checked = !termsCheck.checked;
-      }
-      agreeBtn.disabled = !termsCheck.checked;
-    });
 
     // Native fallback
     termsCheck.addEventListener('change', () => {
